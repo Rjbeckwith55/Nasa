@@ -4,20 +4,23 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
-../src/NasaFinalCode.cpp 
+../src/NasaFinalCode.cpp \
+../src/RoboteqDevice.cpp 
 
 OBJS += \
-./src/NasaFinalCode.o 
+./src/NasaFinalCode.o \
+./src/RoboteqDevice.o 
 
 CPP_DEPS += \
-./src/NasaFinalCode.d 
+./src/NasaFinalCode.d \
+./src/RoboteqDevice.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
 src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: GCC C++ Compiler'
-	g++ -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	g++ -I/home/cod/Downloads/Linux -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

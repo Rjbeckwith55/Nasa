@@ -41,10 +41,10 @@ int main() {
 	inet_pton(AF_INET,"192.168.1.80",&address.sin_addr.s_addr);
 
 	//USB connections to the Roboteqs
-	int status1 = device1.Connect("/dev/ttyACM0");
-	int status2 = device2.Connect("/dev/ttyACM1");
+	int status1 = device1.Connect("/dev/ttyACM3");
+	int status2 = device2.Connect("/dev/ttyACM0");
 	int status3 = device3.Connect("/dev/ttyACM2");
-	int status4 = device4.Connect("/dev/ttyACM3");
+	int status4 = device4.Connect("/dev/ttyACM1");
 	//Error checking for device connections
 	if(status1 != RQ_SUCCESS)
 	{
@@ -62,16 +62,28 @@ int main() {
 	{
 		cout<<"Error connecting to device4: "<<status4<<"."<<endl;
 	}
+	int result;
+	if(device3.GetConfig(_DINA,1,result) != RQ_SUCCESS)
+	{
+		cout<<"Failed"<<endl;
+	}
+	else{
+	cout<<"Result:"<<result<<endl;
+	}
+
+
 
 	while(true){
 		//turn off watch dog timer so the motors stay powered.
-		device1.SetConfig(_RWD,0);
-		device2.SetConfig(_RWD,0);
+		//device1.SetConfig(_RWD,0);
+		//device2.SetConfig(_RWD,0);
 		device3.SetConfig(_RWD,0);
 		device4.SetConfig(_RWD,0);
 		int power;
 
 		while( recvfrom(serverfd,buffer,7,0,(struct sockaddr *)&remaddr,&addrlen)>0){
+
+
 			//convert buffer to a string for easier use
 			string command(buffer);
 
@@ -94,6 +106,16 @@ int main() {
 
 				device1.SetCommand(_GO,1,power);
 				cout<<"- SetCommand(_GO, 1,"<<power<<")..."<<endl;
+
+				//sendto
+				for (int i =0; i<5;i++){
+					buffer[i] = command[i];
+				}
+				inet_ntoa(remaddr.sin_addr);
+				ntohs(remaddr.sin_port);
+				int y = sendto(serverfd, buffer, 7, 0, (struct sockaddr *)&remaddr, addrlen);
+				string command(buffer);
+				cout<<"Sent" << command<<endl;
 			}
 			//Drive right side of the robot - Right Stick
 			if(command.substr(0,2)=="RI"){

@@ -219,6 +219,50 @@ int RoboteqDevice::IssueCommand(string commandType, string command, string args,
 
 	return RQ_SUCCESS;
 }
+
+int RoboteqDevice::IssueCANCommand(string commandType, string id, string command, string args, int waitms, string &response, bool isplusminus)
+{
+	int status;
+	string read;
+	response = "";
+	if(args == "")
+		status = Write("@" + id + commandType + command + "\r");
+	else
+		status = Write("@" + id + commandType + command + " " + args + "\r");
+
+	if(status != RQ_SUCCESS)
+		return status;
+
+	usleep(waitms * 1000l);
+
+	status = ReadAll(read);
+	if(status != RQ_SUCCESS)
+		return status;
+
+	if(isplusminus)
+	{
+		if(read.length() < 2)
+			return RQ_INVALID_RESPONSE;
+
+		response = read.substr(read.length() - 2, 1);
+		return RQ_SUCCESS;
+	}
+
+
+	string::size_type pos = read.rfind(command + "=");
+	if(pos == string::npos)
+		return RQ_INVALID_RESPONSE;
+
+	pos += command.length() + 1;
+
+	string::size_type carriage = read.find("\r", pos);
+	if(carriage == string::npos)
+		return RQ_INVALID_RESPONSE;
+
+	response = read.substr(pos, carriage - pos);
+
+	return RQ_SUCCESS;
+}
 int RoboteqDevice::IssueCommand(string commandType, string command, int waitms, string &response, bool isplusminus)
 {
 	return IssueCommand(commandType, command, "", waitms, response, isplusminus);
@@ -286,9 +330,43 @@ int RoboteqDevice::SetCommand(int commandItem, int index, int value)
 
 	return RQ_SUCCESS;
 }
+int RoboteqDevice::SetCANCommand(int id, int commandItem, int index, int value)
+{
+	string response;
+	char command[10];
+	char args[50];
+	char ID[3];
+
+	if(commandItem < 0 || commandItem > 255)
+		return RQ_INVALID_COMMAND_ITEM;
+	//set the ID of the CAN node
+	sprintf(ID,"%i",id);
+	sprintf(command, "$%02X", commandItem);
+	sprintf(args, "%i %i", index, value);
+	if(index == MISSING_VALUE)
+	{
+		if(value != MISSING_VALUE)
+			sprintf(args, "%i", value);
+		index = 0;
+	}
+
+	if(index < 0)
+		return RQ_INDEX_OUT_RANGE;
+
+	int status = IssueCANCommand("!",id, command, args, 10, response, true);
+	if(status != RQ_SUCCESS)
+		return status;
+	if(response != "+")
+		return RQ_SET_COMMAND_FAILED;
+
+	return RQ_SUCCESS;
+}
 int RoboteqDevice::SetCommand(int commandItem, int value)
 {
 	return SetCommand(commandItem, MISSING_VALUE, value);
+}
+int RoboteqDevice::SetCANCommand(int id, int commandItem, int index, int value){
+	return SetCANCommmand(id, commandItem, index, value);
 }
 int RoboteqDevice::SetCommand(int commandItem)
 {

@@ -19,10 +19,17 @@
 #include <arpa/inet.h>
 #define PORT 5005
 using namespace std;
-
+/*Wiring Configurations
+ One Roboteq device is plugged into the USB port under device ttyACM0
+ The other 3 devices are wired as slave controllers using CAN:
+ Which controller controls what motor:
+ Master ID-@01: Right drive and Left drive
+ Slave ID-@02: Conveyor and Actuators
+ Slave ID-@03: Ballscrew and Auger motor1
+ Slave ID-@04: Auger motor2 and Auger motor3*/
 int main() {
 	//4 Roboteq MDC 2130 motor controllers
-	RoboteqDevice device1, device2, device3, device4;
+	RoboteqDevice master;
 	struct sockaddr_in address;
 	struct sockaddr_in remaddr;
 	socklen_t addrlen = sizeof(remaddr);
@@ -41,27 +48,15 @@ int main() {
 	inet_pton(AF_INET, "192.168.1.80", &address.sin_addr.s_addr);
 
 	//USB connections to the Roboteqs
-	int status1 = device1.Connect("/dev/ttyACM1");
-	int status2 = device2.Connect("/dev/ttyACM2");
-	int status3 = device3.Connect("/dev/ttyACM0");
-	int status4 = device4.Connect("/dev/ttyACM3");
+	int status1 = master.Connect("/dev/ttyACM0");
 	//Error checking for device connections
 	if (DEBUG) {
 
 		if (status1 != RQ_SUCCESS) {
 			cout << "Error connecting to device1: " << status1 << "." << endl;
 		}
-		if (status2 != RQ_SUCCESS) {
-			cout << "Error connecting to device2: " << status2 << "." << endl;
-		}
-		if (status3 != RQ_SUCCESS) {
-			cout << "Error connecting to device3: " << status3 << "." << endl;
-		}
-		if (status4 != RQ_SUCCESS) {
-			cout << "Error connecting to device4: " << status4 << "." << endl;
-		}
 		int result;
-		if (device3.GetConfig(_DINA, 1, result) != RQ_SUCCESS) {
+		if (master.GetConfig(_DINA, 1, result) != RQ_SUCCESS) {
 			cout << "Failed" << endl;
 		} else {
 			cout << "Result:" << result << endl;
@@ -72,8 +67,7 @@ int main() {
 		//turn off watch dog timer so the motors stay powered.
 		//device1.SetConfig(_RWD,0);
 		//device2.SetConfig(_RWD,0);
-		device3.SetConfig(_RWD, 0);
-		device4.SetConfig(_RWD, 0);
+		master.SetConfig(_RWD,0);
 		int power;
 
 		while (recvfrom(serverfd, buffer, 7, 0, (struct sockaddr *) &remaddr,
@@ -100,7 +94,7 @@ int main() {
 				power = stoi(command.substr(2));
 				//left drive motor one will be powered forward or backwards depending on the sign of the power command
 
-				device1.SetCommand(_GO, 1, power);
+				master.SetCommand(_GO, 1, power);
 				cout << "- SetCommand(_GO, 1," << power << ")..." << endl;
 
 				//send the data back
@@ -118,34 +112,34 @@ int main() {
 			if (command.substr(0, 2) == "RI") {
 				power = stoi(command.substr(2));
 				//right drive motor will be powered forward or backwards depending on the sign of the power command
-				device1.SetCommand(_GO, 2, power);
+				master.SetCommand(_GO, 2, power);
 			}
 			if (command.substr(0, 2) == "CO") {
 				power = stoi(command.substr(2));
 				//right drive motor will be powered forward or backwards depending on the sign of the power command
-				device2.SetCommand(_GO, 1, power);
+				master.SetCANCommand(02,_GO, 1, power);
 			}
 			if (command.substr(0, 2) == "SL") {
 				power = stoi(command.substr(2));
 				//right drive motor will be powered forward or backwards depending on the sign of the power command
-				device2.SetCommand(_GO, 2, power);
+				master.SetCANCommand(02,_GO, 2, power);
 			}
 			if (command.substr(0, 2) == "AU") {
 				//set the command to the number value that was sent
 				power = stoi(command.substr(2));
 				//3 auger motors for the drill
-				device3.SetCommand(_GO, 1, power);
-				device4.SetCommand(_GO, 2, power);
-				device4.SetCommand(_GO, 1, power);
+				master.SetCANCommand(03,_GO, 1, power);
+				master.SetCANCommand(04,_GO, 2, power);
+				master.SetCANCommand(04,_GO, 1, power);
 
 				if (DEBUG) {
 					int amps;
 					//print out the amp draw of all of the motors
-					device3.GetValue(_MOTAMPS, 1, amps);
+					master.GetValue(_MOTAMPS, 1, amps);
 					cout << "Auger Motor1 Amps" << amps << endl;
-					device4.GetValue(_MOTAMPS, 2, amps);
+					master.GetValue(_MOTAMPS, 2, amps);
 					cout << "Auger Motor2 Amps" << amps << endl;
-					device4.GetValue(_MOTAMPS, 1, amps);
+					master.GetValue(_MOTAMPS, 1, amps);
 					cout << "Auger Motor3 Amps" << amps << endl;
 				}
 			}

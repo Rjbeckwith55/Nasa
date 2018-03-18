@@ -267,7 +267,10 @@ int RoboteqDevice::IssueCommand(string commandType, string command, int waitms, 
 {
 	return IssueCommand(commandType, command, "", waitms, response, isplusminus);
 }
-
+/*int RoboteqDevice::IssueCANCommand(string commandType, string id, string command, string args, int waitms, string &response, bool isplusminus)
+{
+	return IssueCANCommand(commandType,id,command, "",waitms, &response,isplusminus);
+}*/
 int RoboteqDevice::SetConfig(int configItem, int index, int value)
 {
 	string response;
@@ -353,7 +356,7 @@ int RoboteqDevice::SetCANCommand(int id, int commandItem, int index, int value)
 	if(index < 0)
 		return RQ_INDEX_OUT_RANGE;
 
-	int status = IssueCANCommand("!",id, command, args, 10, response, true);
+	int status = IssueCANCommand("!",ID, command, args, 10, response, true);
 	if(status != RQ_SUCCESS)
 		return status;
 	if(response != "+")
@@ -365,9 +368,9 @@ int RoboteqDevice::SetCommand(int commandItem, int value)
 {
 	return SetCommand(commandItem, MISSING_VALUE, value);
 }
-int RoboteqDevice::SetCANCommand(int id, int commandItem, int index, int value){
-	return SetCANCommmand(id, commandItem, index, value);
-}
+//int RoboteqDevice::SetCANCommand(int id, int commandItem, int index, int value){
+//	return SetCANCommmand(id, commandItem, index, value);
+//}
 int RoboteqDevice::SetCommand(int commandItem)
 {
 	return SetCommand(commandItem, MISSING_VALUE, MISSING_VALUE);

@@ -53,11 +53,11 @@ int main() {
 	if (DEBUG) {
 
 		if (status1 != RQ_SUCCESS) {
-			cout << "Error connecting to device1: " << status1 << "." << endl;
+			cout << "Error connecting to master: " << status1 << "." << endl;
 		}
 		int result;
 		if (master.GetConfig(_DINA, 1, result) != RQ_SUCCESS) {
-			cout << "Failed" << endl;
+			cout << "Failed to receive configuration data" << endl;
 		} else {
 			cout << "Result:" << result << endl;
 		}

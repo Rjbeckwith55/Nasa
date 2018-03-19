@@ -1,0 +1,33 @@
+[1mdiff --git a/Debug/NasaFinalCode b/Debug/NasaFinalCode[m
+[1mdeleted file mode 100755[m
+[1mindex 1d79944..0000000[m
+Binary files a/Debug/NasaFinalCode and /dev/null differ
+[1mdiff --git a/Debug/src/NasaFinalCode.o b/Debug/src/NasaFinalCode.o[m
+[1mdeleted file mode 100644[m
+[1mindex 31e1cbe..0000000[m
+Binary files a/Debug/src/NasaFinalCode.o and /dev/null differ
+[1mdiff --git a/src/NasaFinalCode.cpp b/src/NasaFinalCode.cpp[m
+[1mindex a9550e9..375fc76 100644[m
+[1m--- a/src/NasaFinalCode.cpp[m
+[1m+++ b/src/NasaFinalCode.cpp[m
+[36m@@ -22,7 +22,7 @@[m [musing namespace std;[m
+ [m
+ int main() {[m
+ 	//4 Roboteq MDC 2130 motor controllers[m
+[31m-	RoboteqDevice device1, device2, device3, device4;[m
+[32m+[m	[32mRoboteqDevice master;[m
+ 	struct sockaddr_in address;[m
+ 	struct sockaddr_in remaddr;[m
+ 	socklen_t addrlen = sizeof(remaddr);[m
+[36m@@ -41,10 +41,7 @@[m [mint main() {[m
+ 	inet_pton(AF_INET, "192.168.1.80", &address.sin_addr.s_addr);[m
+ [m
+ 	//USB connections to the Roboteqs[m
+[31m-	int status1 = device1.Connect("/dev/ttyACM1");[m
+[31m-	int status2 = device2.Connect("/dev/ttyACM2");[m
+[31m-	int status3 = device3.Connect("/dev/ttyACM0");[m
+[31m-	int status4 = device4.Connect("/dev/ttyACM3");[m
+[32m+[m	[32mint status1 = master.Connect("/dev/ttyACM1");[m
+ 	//Error checking for device connections[m
+ 	if (DEBUG) {[m
+ [m

@@ -8,7 +8,7 @@ import pygame
         ST = Steer(Actuator)
         AU = Auger
         TI = Tilt(Actuators)
-        SL = BallsScrew Slide
+        SL = BallScrew Slide
         CO = Conveyor
         """
 
@@ -30,6 +30,7 @@ def main():
 
     #Create UDP socket connection
     #HOST = '192.168.1.153'
+    #HOST = 'localhost'
     HOST = '192.168.1.73'
     PORT = 5005
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -68,6 +69,7 @@ def main():
                     Str="LF"
                     Send(commandLF,s,Str)
                     #it sent but won't continue running
+                    
                     while(len(data)==0):
                             data, HOST = receiveSocket.recvfrom(8)
                             print("Here",data)

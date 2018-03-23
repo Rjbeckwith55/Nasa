@@ -30,12 +30,12 @@ def main():
 
     #Create UDP socket connection
     #HOST = '192.168.1.153'
-    #HOST = 'localhost'
-    HOST = '192.168.1.73'
+    HOST = 'localhost'
+    #HOST = '192.168.1.73'
     PORT = 5005
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     receiveSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    receiveSocket.bind((HOST, PORT))
+    #receiveSocket.bind((HOST, PORT))
     
     #initialize pygame to handle the xbox controller
     pygame.init()
@@ -69,10 +69,8 @@ def main():
                     Str="LF"
                     Send(commandLF,s,Str)
                     #it sent but won't continue running
-                    
-                    while(len(data)==0):
-                            data, HOST = receiveSocket.recvfrom(8)
-                            print("Here",data)
+                    data, HOST = s.recvfrom(100)
+                    print("Amps:",data.decode())
                     
                 elif joystick.get_axis(1) < .1 and joystick.get_axis(1) > -.1 and commandLF != 0:
                     commandLF = 0
@@ -98,7 +96,11 @@ def main():
                 #Conveyor Belt control using the X button
                 if joystick.get_button(2) != 0:
                     Str = "CO"
-                    Send(900,s,Str)
+                    Send(100,s,Str)
+                
+                if joystick.get_button(3) != 0:
+                    Str = "CO"
+                    Send(-100,s,Str)
 
                #Auger control using the A button (Drill direction)
                 if joystick.get_button(0) != 0:

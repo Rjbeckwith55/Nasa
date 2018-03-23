@@ -48,6 +48,7 @@ def main():
     #set initial values of the drive motors to off
     commandLF = 0
     commandRI = 0
+    counter = 0
     data = ""
     #Bools for motion
     SlR = True
@@ -68,9 +69,7 @@ def main():
                         commandLF = -900
                     Str="LF"
                     Send(commandLF,s,Str)
-                    #it sent but won't continue running
-                    data, HOST = s.recvfrom(100)
-                    print("Amps:",data.decode())
+                    
                     
                 elif joystick.get_axis(1) < .1 and joystick.get_axis(1) > -.1 and commandLF != 0:
                     commandLF = 0
@@ -150,7 +149,6 @@ def main():
                     running = False
                     Str="QU"
                     commandRI = 0
-                    Send(commandLF,s,Str)
                     Send(commandRI,s,Str)
                     print ("Stopping")
                 #Pause the program when select is pressed
@@ -162,6 +160,8 @@ def main():
                         print ("Unpausing . . . ")
                     counter+=1
                     Send(50,s,Str)
+                data, HOST = s.recvfrom(100)
+                print("Received: ",data)
 
     s.close()
     stop()

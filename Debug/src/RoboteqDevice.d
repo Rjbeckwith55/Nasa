@@ -1,7 +1,6 @@
-src/RoboteqDevice.d: ../src/RoboteqDevice.cpp \
- /home/cod/Downloads/Linux/RoboteqDevice.h \
- /home/cod/Downloads/Linux/ErrorCodes.h
+src/RoboteqDevice.d: ../src/RoboteqDevice.cpp ../src/RoboteqDevice.h \
+ ../src/ErrorCodes.h
 
-/home/cod/Downloads/Linux/RoboteqDevice.h:
+../src/RoboteqDevice.h:
 
-/home/cod/Downloads/Linux/ErrorCodes.h:
+../src/ErrorCodes.h:

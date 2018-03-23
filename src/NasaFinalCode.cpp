@@ -27,6 +27,9 @@ using namespace std;
  Slave ID-@02: Conveyor and Actuators
  Slave ID-@03: Ballscrew and Auger motor1
  Slave ID-@04: Auger motor2 and Auger motor3*/
+
+
+
 int main() {
 	//4 Roboteq MDC 2130 motor controllers
 	RoboteqDevice master;
@@ -75,6 +78,36 @@ int main() {
 
 			//convert buffer to a string for easier use
 			string command(buffer);
+			//Send the data back to the server
+			string send;
+			int values[15];
+			int n =0;
+			master.GetValue(_MOTAMPS, 1, values[n]);
+			master.GetValue(_MOTAMPS, 1, values[++n]);
+			for(int i = 0; i<=n; i++){
+							send += values[i];
+						}
+			if(DEBUG){
+				int debugValues[15];
+				int d = 0;
+				master.GetValue(_BATAMPS,debugValues[d]);
+				d++;
+				master.GetValue(_TEMP,debugValues[d]);
+				d++;
+				master.GetValue(_VOLTS,debugValues[d]);
+				d++;
+				for(int i = 0; i<=d; i++){
+						send += values[i];
+				}
+				cout<<"Sent: "<< send<<endl;
+			}
+			for (int i = 0; i < send.length(); i++) {
+				buffer[i] = send[i];
+			}
+			inet_ntoa(remaddr.sin_addr);
+			ntohs(remaddr.sin_port);
+			int y = sendto(serverfd, buffer, 100, 0,
+					(struct sockaddr *) &remaddr, addrlen);
 
 			//fixes extra digit issues and string length issues
 			if (command.length() >= 6 && command[2] != '-') {
@@ -94,7 +127,7 @@ int main() {
 				power = stoi(command.substr(2));
 				//left drive motor one will be powered forward or backwards depending on the sign of the power command
 
-				master.SetCommand(_GO, 1, power);
+				master.SetCANCommand(01,_GO, 1, power*.2);
 				cout << "- SetCommand(_GO, 1," << power << ")..." << endl;
 
 				//send the data back
@@ -103,7 +136,7 @@ int main() {
 				}
 				inet_ntoa(remaddr.sin_addr);
 				ntohs(remaddr.sin_port);
-				int y = sendto(serverfd, buffer, 7, 0,
+				int y = sendto(serverfd, buffer, 100, 0,
 						(struct sockaddr *) &remaddr, addrlen);
 				string command(buffer);
 				cout << "Sent" << command << endl;
@@ -131,16 +164,13 @@ int main() {
 				master.SetCANCommand(03,_GO, 1, power);
 				master.SetCANCommand(04,_GO, 2, power);
 				master.SetCANCommand(04,_GO, 1, power);
-
-				if (DEBUG) {
-					int amps;
-					//print out the amp draw of all of the motors
-					master.GetValue(_MOTAMPS, 1, amps);
-					cout << "Auger Motor1 Amps" << amps << endl;
-					master.GetValue(_MOTAMPS, 2, amps);
-					cout << "Auger Motor2 Amps" << amps << endl;
-					master.GetValue(_MOTAMPS, 1, amps);
-					cout << "Auger Motor3 Amps" << amps << endl;
+			}
+			if (command.substr(0, 2) == "QU") {
+				//stop all motors
+				master.SetCommand(_GO,1,0);
+				master.SetCommand(_GO,2,0);
+				if(DEBUG){
+					cout<<"All motors off"<<endl;
 				}
 			}
 			//clear out the buffer after each loop

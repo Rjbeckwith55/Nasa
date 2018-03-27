@@ -48,6 +48,7 @@ def main():
     #set initial values of the drive motors to off
     commandLF = 0
     commandRI = 0
+    SLPower = 0
     counter = 0
     data = ""
     #Bools for motion
@@ -93,44 +94,46 @@ def main():
                     
 
                 #Conveyor Belt control using the X button
+                #**Note: this will only turn off if the limit switch is hit
                 if joystick.get_button(2) != 0:
                     Str = "CO"
-                    Send(100,s,Str)
-                
+                    Send(999,s,Str)
+                #Conveyor Belt Reverse using the Y button
                 if joystick.get_button(3) != 0:
                     Str = "CO"
-                    Send(-100,s,Str)
+                    Send(-999,s,Str)
 
                #Auger control using the A button (Drill direction)
                 if joystick.get_button(0) != 0:
                     Str = "AU"
-                    Send(100,s,Str)
-                else:
-                    Str = "AU"
-                    Send(0,s,Str)
+                    Send(999,s,Str)
 
                 #Auger control using B button (Opposite direction)
                 if joystick.get_button(1) != 0:
                     Str = "AU"
-                    Send(-100,s,Str)
+                    Send(-999,s,Str)
 
-                #Ballscrew slide using the left stick Left
-                if joystick.get_axis(2) > .1:
+                #Ballscrew slide using left trigger
+                if joystick.get_axis(2) > .1 and SLPower != 700:
                     Str = "SL"
-                    Send(700,s,Str)
+                    SLPower = 700
+                    Send(SLPower,s,Str)
                     SlL = True
-                elif joystick.get_axis(2) < .1 and SlL:
+                elif joystick.get_axis(2) < .1 and SLPower != 0:
                     SlL = False
                     Str = "SL"
+                    SLPower = 0
                     Send(0,s,Str)
 
-                #Ballscrew slide using right stick Right
-                if joystick.get_axis(2) < -.1:
+                #Ballscrew slide using right trigger
+                if joystick.get_axis(2) < -.1 and SLPower !=-700:
                     Str = "SL"
-                    Send(-700,s,Str)
+                    SLPower = -700
+                    Send(SLPower,s,Str)
                     SlR = True
-                elif joystick.get_axis(2) > -.1 and SlR:
+                elif joystick.get_axis(2) > -.1 and SLPower != 0:
                     Str = "SL"
+                    SLPower = 0
                     SlR = False
                     Send(0,s,Str)
 
@@ -166,7 +169,8 @@ def main():
     s.close()
     stop()
 def Send(command,s,Str):
-    HOST = '192.168.1.80'
+    #HOST = '192.168.1.80'
+    HOST = '192.168.1.73'
     PORT = 5005
     msg = Str + str(command)
     print(msg)

@@ -20,23 +20,23 @@
 #define PORT 5005
 using namespace std;
 /*Wiring Configurations
- One Roboteq device is plugged into the USB port under device ttyACM0
- The other 3 devices are wired as slave controllers using CAN:
- Which controller controls what motor:
+ Each Roboteq handles 2 channels and is plugged into a USB on each one.
  */
 
 int main() {
-	//4 Roboteq MDC 2130 motor controllers
-	RoboteqDevice Roboteq1, Roboteq2, Roboteq3, Roboteq4,placeholder;
+	//4 Roboteq MDC 2230 motor controllers
+	RoboteqDevice Roboteq1, Roboteq2, Roboteq3, Roboteq4, placeholder;
 	//placeholder is just to make the array make more sense when coding it.
-	RoboteqDevice roboteqs[] = {placeholder, Roboteq1, Roboteq2, Roboteq3, Roboteq4 };
+	RoboteqDevice roboteqs[] = { placeholder, Roboteq1, Roboteq2, Roboteq3,
+			Roboteq4 };
 	struct sockaddr_in address;
 	struct sockaddr_in remaddr;
 	socklen_t addrlen = sizeof(remaddr);
 	char buffer[7];
 	int serverfd;
+	bool sendData = true;
 	//turn console output on and off
-	bool DEBUG = true;
+	bool DEBUG = false;
 
 	if ((serverfd = socket(AF_INET, SOCK_DGRAM, 0)) == 0) {
 		cout << "Socket failed" << endl;
@@ -62,15 +62,18 @@ int main() {
 		if (Roboteq1.GetConfig(_DINA, 1, result) != RQ_SUCCESS) {
 			cout << "Failed to receive configuration data" << endl;
 		} else {
-			cout << "Result:" << result << endl;
+			cout << "Returned:" << result << endl;
 		}
 	}
-
+	Roboteq1.SetConfig(_RWD, 0);
+	Roboteq2.SetConfig(_RWD, 0);
+	Roboteq3.SetConfig(_RWD, 0);
+	Roboteq4.SetConfig(_RWD, 0);
 	while (true) {
 		//turn off watch dog timer so the motors stay powered.
-		for (int i = 1; i < 5; i++) {
-			roboteqs[i].SetConfig(_RWD, 0);
-		}
+//		for (int i = 1; i < 5; i++) {
+//			roboteqs[i].SetConfig(_RWD, 0);
+//		}
 
 		int power;
 
@@ -79,40 +82,6 @@ int main() {
 
 			//convert buffer to a string for easier use
 			string command(buffer);
-			//Send the data back to the server
-			string send;
-			int values[15];
-			int n = 0;
-			cout<<Roboteq1.GetValue(_MOTAMPS, 1, values[n])<<endl;
-			cout<<Roboteq1.GetValue(_MOTAMPS, 2, values[++n])<<endl;
-			Roboteq2.GetValue(_MOTAMPS, 1, values[++n]);
-			Roboteq2.GetValue(_MOTAMPS, 2, values[++n]);
-			Roboteq3.GetValue(_MOTAMPS, 1, values[++n]);
-			Roboteq3.GetValue(_MOTAMPS, 2, values[++n]);
-			Roboteq4.GetValue(_MOTAMPS, 1, values[++n]);
-			Roboteq4.GetValue(_MOTAMPS, 2, values[++n]);
-
-			for (int i = 0; i <= n; i++) {
-				send += values[i];
-			}
-			if (DEBUG) {
-				int debugValues[15];
-				int d = 0;
-				Roboteq1.GetValue(_BATAMPS, debugValues[d++]);
-				Roboteq1.GetValue(_TEMP, debugValues[d++]);
-				Roboteq1.GetValue(_VOLTS, debugValues[d++]);
-				for (int i = 0; i <= d; i++) {
-					send += ","+values[i];
-				}
-				cout << "Sent: " << send << endl;
-			}
-			for (int i = 0; i < send.length(); i++) {
-				buffer[i] = send[i];
-			}
-			inet_ntoa(remaddr.sin_addr);
-			ntohs(remaddr.sin_port);
-			int y = sendto(serverfd, buffer, 100, 0,
-					(struct sockaddr *) &remaddr, addrlen);
 
 			//fixes extra digit issues and string length issues
 			if (command.length() >= 6 && command[2] != '-') {
@@ -126,22 +95,24 @@ int main() {
 
 			//RI - Drive the right side of the robot - Right stick
 			//LF - Drive the left side of the robot - Left stick
-
+			sendData = true;
 			//Drive left side of the robot - Left Stick
 			if (command.substr(0, 2) == "LF") {
 				power = stoi(command.substr(2));
 				//left drive motor one will be powered forward or backwards depending on the sign of the power command
-				Roboteq1.SetCommand(_GO, 1, power * .2);
+				Roboteq1.SetCommand(_GO, 1, power);
+				sendData = false;
 			}
 			//Drive right side of the robot - Right Stick
 			if (command.substr(0, 2) == "RI") {
 				power = stoi(command.substr(2));
 				//right drive motor will be powered forward or backwards depending on the sign of the power command
-				Roboteq1.SetCommand(_GO, 2, power * .2);
+				Roboteq1.SetCommand(_GO, 2, power);
+				sendData = false;
 			}
 			if (command.substr(0, 2) == "CO") {
 				power = stoi(command.substr(2));
-				//right drive motor will be powered forward or backwards depending on the sign of the power command
+				//Conveyor belt
 				Roboteq2.SetCommand(_GO, 1, power);
 			}
 			if (command.substr(0, 2) == "SL") {
@@ -157,7 +128,7 @@ int main() {
 				Roboteq3.SetCommand(_GO, 2, power);
 				Roboteq4.SetCommand(_GO, 1, power);
 			}
-			if (command.substr(0, 2) == "AC") {
+			if (command.substr(0, 2) == "TI") {
 				power = stoi(command.substr(2));
 				//Actuators up and down
 				Roboteq2.SetCommand(_GO, 2, power);
@@ -170,10 +141,51 @@ int main() {
 				}
 				//buffer[]= {'O','F','F'};
 				int y = sendto(serverfd, buffer, 3, 0,
-									(struct sockaddr *) &remaddr, addrlen);
+						(struct sockaddr *) &remaddr, addrlen);
 				if (DEBUG) {
 					cout << "All motors off" << endl;
 				}
+			}
+			if (sendData) {
+				//Send the data back to the server
+				string send;
+				int values[15];
+				int n = 0;
+				int leftamp, rightamp, conveyoramp, tiltamp, augamp1, augamp2,
+						augamp3, screwamp;
+				Roboteq1.GetValue(_MOTAMPS, 1, leftamp);
+				Roboteq1.GetValue(_MOTAMPS, 2, rightamp);
+				Roboteq2.GetValue(_MOTAMPS, 1, conveyoramp);
+				Roboteq2.GetValue(_MOTAMPS, 2, tiltamp);
+				Roboteq3.GetValue(_MOTAMPS, 1, augamp1);
+				Roboteq3.GetValue(_MOTAMPS, 2, augamp2);
+				Roboteq4.GetValue(_MOTAMPS, 1, augamp3);
+				Roboteq4.GetValue(_MOTAMPS, 2, screwamp);
+				send = to_string(leftamp) + "," + to_string(rightamp) + ","
+						+ to_string(conveyoramp) + "," + to_string(tiltamp)
+						+ "," + to_string(augamp1) + "," + to_string(augamp2)
+						+ "," + to_string(augamp3) + "," + to_string(screwamp);
+//						for (int i = 0; i <= n; i++) {
+//							send += ","+values[i];
+//						}
+				if (DEBUG) {
+					int debugValues[15];
+					int d = 0;
+					Roboteq1.GetValue(_BATAMPS, debugValues[d++]);
+					Roboteq1.GetValue(_TEMP, debugValues[d++]);
+					Roboteq1.GetValue(_VOLTS, debugValues[d++]);
+					for (int i = 0; i <= d; i++) {
+						send += "," + values[i];
+					}
+					cout << "Sent: " << send << endl;
+				}
+				for (int i = 0; i < send.length(); i++) {
+					buffer[i] = send[i];
+				}
+				inet_ntoa(remaddr.sin_addr);
+				ntohs(remaddr.sin_port);
+				int y = sendto(serverfd, buffer, 30, 0,
+						(struct sockaddr *) &remaddr, addrlen);
 			}
 			//clear out the buffer after each loop
 			for (int i = 0; i < 7; i++) {

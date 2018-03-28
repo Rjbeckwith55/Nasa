@@ -52,6 +52,7 @@ def main():
     counter = 0
     toggleAU = 2
     toggleCO = 2
+    toggleTI = 2
     data = ""
     #Bools for motion
     SlR = True
@@ -65,7 +66,7 @@ def main():
                 #Left side tank drive
                 if (joystick.get_axis(1) > .1 or joystick.get_axis(1) < -.1) and (commandLF != 900 and commandLF != -900):
                     previousCommand = commandLF
-                    commandLF = joystick.get_axis(1)*1000
+                    commandLF = -joystick.get_axis(1)*1000
                     commandLF = int(commandLF)
                     if commandLF > 900: 
                         commandLF = 900
@@ -83,7 +84,7 @@ def main():
                 #Right side tank drive
                 if joystick.get_axis(3) > .1 or joystick.get_axis(3) < -.1 and (commandRI != 900 and commandRI != -900):
                     previousCommand = commandRI
-                    commandRI = joystick.get_axis(3)*1000
+                    commandRI = -joystick.get_axis(3)*1000
                     commandRI = int(commandRI)
                     if commandRI > 900: 
                         commandRI = 900
@@ -102,11 +103,20 @@ def main():
                 #**Note: this will also stop motion when the limit switch is hit
                 if joystick.get_button(2) != 0:
                     Str = "CO"
-                    Send(999,s,Str)
+                    if(toggleCO %2 != 0):
+                        Send(999,s,Str)
+                    else:
+                        Send(0,s,Str)
+                    toggleCO=toggleCO+1
+                    
                 #Conveyor Belt Reverse using the Y button
                 if joystick.get_button(3) != 0:
                     Str = "CO"
-                    Send(-999,s,Str)
+                    if(toggleCO %2 != 0):
+                        Send(-999,s,Str)
+                    else:
+                        Send(0,s,Str)
+                    toggleCO=toggleCO+1
 
                #Auger control using the A button (Drill direction)
                 if joystick.get_button(0) != 0:
@@ -140,7 +150,7 @@ def main():
                     Send(0,s,Str)
 
                 #Ballscrew slide using right trigger
-                if joystick.get_axis(2) < -.1 and SLPower !=-700:
+                elif joystick.get_axis(2) < -.1 and SLPower !=-700:
                     Str = "SL"
                     SLPower = -700
                     Send(SLPower,s,Str)
@@ -154,12 +164,20 @@ def main():
                 #Tilt using left bumper
                 if joystick.get_button(4) != 0:
                     Str = "TI"
-                    Send(-900,s,Str)
+                    if(toggleTI %2 != 0):
+                        Send(-900,s,Str)
+                    else:
+                        Send(0,s,Str)
+                    toggleTI=toggleTI+1
 
                 #Tilt using right bumper
                 if joystick.get_button(5) != 0:
                     Str = "TI"
-                    Send(900,s,Str)
+                    if(toggleTI %2 != 0):
+                        Send(900,s,Str)
+                    else:
+                        Send(0,s,Str)
+                    toggleTI=toggleTI+1
 
                 #Exit program if start button is pressed
                 if joystick.get_button(7):

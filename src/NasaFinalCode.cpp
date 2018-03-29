@@ -135,10 +135,15 @@ int main() {
 			}
 			if (command.substr(0, 2) == "QU") {
 				//stop all motors
-				for (int i = 1; i < 5; i++) {
-					roboteqs[i].SetCommand(_GO, 1, 0);
-					roboteqs[i].SetCommand(_GO, 2, 0);
-				}
+				Roboteq1.SetCommand(_GO,1,0);
+				Roboteq1.SetCommand(_GO,2,0);
+				Roboteq2.SetCommand(_GO,1,0);
+				Roboteq2.SetCommand(_GO,2,0);
+				Roboteq3.SetCommand(_GO,1,0);
+				Roboteq3.SetCommand(_GO,2,0);
+				Roboteq4.SetCommand(_GO,1,0);
+				Roboteq4.SetCommand(_GO,2,0);
+
 				//buffer[]= {'O','F','F'};
 				int y = sendto(serverfd, buffer, 3, 0,
 						(struct sockaddr *) &remaddr, addrlen);
@@ -152,7 +157,9 @@ int main() {
 				int values[15];
 				int n = 0;
 				int leftamp, rightamp, conveyoramp, tiltamp, augamp1, augamp2,
-						augamp3, screwamp;
+						augamp3, screwamp, augtemp1, augtemp2, augtemp3,
+						screwtemp;
+				//get the motor amps of each motor
 				Roboteq1.GetValue(_MOTAMPS, 1, leftamp);
 				Roboteq1.GetValue(_MOTAMPS, 2, rightamp);
 				Roboteq2.GetValue(_MOTAMPS, 1, conveyoramp);
@@ -161,10 +168,22 @@ int main() {
 				Roboteq3.GetValue(_MOTAMPS, 2, augamp2);
 				Roboteq4.GetValue(_MOTAMPS, 1, augamp3);
 				Roboteq4.GetValue(_MOTAMPS, 2, screwamp);
+				//get the temperatures of the temperature sensors on the different motors
+				cout<<Roboteq3.GetValue(_ANAIN, augtemp1);
+				cout<<Roboteq3.GetValue(_ANAIN, augtemp2);
+				cout<<Roboteq4.GetValue(_ANAIN, augtemp3);
+				cout<<Roboteq4.GetValue(_ANAIN, screwtemp);
+				augtemp3 = (augtemp3*125)>>8;
+				screwtemp = (screwtemp*125)>>8;
+				augtemp1 = (augtemp1*125)>>8;
+				augtemp2 = (augtemp2*125)>>8;
 				send = to_string(leftamp) + "," + to_string(rightamp) + ","
 						+ to_string(conveyoramp) + "," + to_string(tiltamp)
 						+ "," + to_string(augamp1) + "," + to_string(augamp2)
-						+ "," + to_string(augamp3) + "," + to_string(screwamp);
+						+ "," + to_string(augamp3) + "," + to_string(screwamp)
+						+ "," + to_string(augtemp1) + "," + to_string(augtemp2)
+						+ "," + to_string(augtemp3) + ","
+						+ to_string(screwtemp);
 //						for (int i = 0; i <= n; i++) {
 //							send += ","+values[i];
 //						}

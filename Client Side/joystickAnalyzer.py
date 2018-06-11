@@ -1,145 +1,135 @@
-#######################################
-# Code coded by Mike Doty
-#
-# If you want trackball checking, you will
-# have to code it yourself.  Sorry!
-#
-# Oh, and it just grabs the first joystick.
-#   Yes, that makes me lazy.
-#
-# Released February 8, 2008.
-#######################################
-
 import pygame
-from pygame.locals import *
 
-class App:
+# Define some colors
+BLACK    = (   0,   0,   0)
+WHITE    = ( 255, 255, 255)
+
+# This is a simple class that will help us print to the screen
+# It has nothing to do with the joysticks, just outputting the
+# information.
+class TextPrint:
     def __init__(self):
-        pygame.init()
+        self.reset()
+        self.font = pygame.font.Font(None, 20)
 
-        pygame.display.set_caption("Joystick Analyzer")
+    def print(self, screen, textString):
+        textBitmap = self.font.render(textString, True, BLACK)
+        screen.blit(textBitmap, [self.x, self.y])
+        self.y += self.line_height
+        
+    def reset(self):
+        self.x = 10
+        self.y = 10
+        self.line_height = 15
+        
+    def indent(self):
+        self.x += 10
+        
+    def unindent(self):
+        self.x -= 10
+    
 
-        # Set up the joystick
-        pygame.joystick.init()
+pygame.init()
+ 
+# Set the width and height of the screen [width,height]
+size = [500, 700]
+screen = pygame.display.set_mode(size)
 
-        self.my_joystick = None
-        self.joystick_names = []
+pygame.display.set_caption("My Game")
 
-        # Enumerate joysticks
-        for i in range(0, pygame.joystick.get_count()):
-            self.joystick_names.append(pygame.joystick.Joystick(i).get_name())
+#Loop until the user clicks the close button.
+done = False
 
-        print self.joystick_names
+# Used to manage how fast the screen updates
+clock = pygame.time.Clock()
 
-        # By default, load the first available joystick.
-        if (len(self.joystick_names) > 0):
-            self.my_joystick = pygame.joystick.Joystick(0)
-            self.my_joystick.init()
+# Initialize the joysticks
+pygame.joystick.init()
+    
+# Get ready to print
+textPrint = TextPrint()
 
-        max_joy = max(self.my_joystick.get_numaxes(), 
-                      self.my_joystick.get_numbuttons(), 
-                      self.my_joystick.get_numhats())
+# -------- Main Program Loop -----------
+while done==False:
+    # EVENT PROCESSING STEP
+    for event in pygame.event.get(): # User did something
+        if event.type == pygame.QUIT: # If user clicked close
+            done=True # Flag that we are done so we exit this loop
+        
+        # Possible joystick actions: JOYAXISMOTION JOYBALLMOTION JOYBUTTONDOWN JOYBUTTONUP JOYHATMOTION
+        if event.type == pygame.JOYBUTTONDOWN:
+            print("Joystick button pressed.")
+        if event.type == pygame.JOYBUTTONUP:
+            print("Joystick button released.")
+            
+ 
+    # DRAWING STEP
+    # First, clear the screen to white. Don't put other drawing commands
+    # above this, or they will be erased with this command.
+    screen.fill(WHITE)
+    textPrint.reset()
 
-        self.screen = pygame.display.set_mode( (max_joy * 30 + 10, 170) )
+    # Get count of joysticks
+    joystick_count = pygame.joystick.get_count()
 
-        self.font = pygame.font.SysFont("Courier", 20)
+    textPrint.print(screen, "Number of joysticks: {}".format(joystick_count) )
+    textPrint.indent()
+    
+    # For each joystick:
+    for i in range(joystick_count):
+        joystick = pygame.joystick.Joystick(i)
+        joystick.init()
+    
+        textPrint.print(screen, "Joystick {}".format(i) )
+        textPrint.indent()
+    
+        # Get the name from the OS for the controller/joystick
+        name = joystick.get_name()
+        textPrint.print(screen, "Joystick name: {}".format(name) )
+        
+        # Usually axis run in pairs, up/down for one, and left/right for
+        # the other.
+        axes = joystick.get_numaxes()
+        textPrint.print(screen, "Number of axes: {}".format(axes) )
+        textPrint.indent()
+        
+        for i in range( axes ):
+            axis = joystick.get_axis( i )
+            textPrint.print(screen, "Axis {} value: {:>6.3f}".format(i, axis) )
+        textPrint.unindent()
+            
+        buttons = joystick.get_numbuttons()
+        textPrint.print(screen, "Number of buttons: {}".format(buttons) )
+        textPrint.indent()
 
-    # A couple of joystick functions...
-    def check_axis(self, p_axis):
-        if (self.my_joystick):
-            if (p_axis &lt; self.my_joystick.get_numaxes()):
-                return self.my_joystick.get_axis(p_axis)
+        for i in range( buttons ):
+            button = joystick.get_button( i )
+            textPrint.print(screen, "Button {:>2} value: {}".format(i,button) )
+        textPrint.unindent()
+            
+        # Hat switch. All or nothing for direction, not like joysticks.
+        # Value comes back in an array.
+        hats = joystick.get_numhats()
+        textPrint.print(screen, "Number of hats: {}".format(hats) )
+        textPrint.indent()
 
-        return 0
+        for i in range( hats ):
+            hat = joystick.get_hat( i )
+            textPrint.print(screen, "Hat {} value: {}".format(i, str(hat)) )
+        textPrint.unindent()
+        
+        textPrint.unindent()
 
-    def check_button(self, p_button):
-        if (self.my_joystick):
-            if (p_button &lt; self.my_joystick.get_numbuttons()):
-                return self.my_joystick.get_button(p_button)
+    
+    # ALL CODE TO DRAW SHOULD GO ABOVE THIS COMMENT
+    
+    # Go ahead and update the screen with what we've drawn.
+    pygame.display.flip()
 
-        return False
-
-    def check_hat(self, p_hat):
-        if (self.my_joystick):
-            if (p_hat &lt; self.my_joystick.get_numhats()):
-                return self.my_joystick.get_hat(p_hat)
-
-        return (0, 0)
-
-    def draw_text(self, text, x, y, color, align_right=False):
-        surface = self.font.render(text, True, color, (0, 0, 0))
-        surface.set_colorkey( (0, 0, 0) )
-
-        self.screen.blit(surface, (x, y))
-
-    def center_text(self, text, x, y, color):
-        surface = self.font.render(text, True, color, (0, 0, 0))
-        surface.set_colorkey( (0, 0, 0) )
-
-        self.screen.blit(surface, (x - surface.get_width() / 2, 
-                                   y - surface.get_height() / 2))
-
-    def main(self):
-        while (True):
-            self.g_keys = pygame.event.get()
-
-            self.screen.fill(0)
-
-            for event in self.g_keys:
-                if (event.type == KEYDOWN and event.key == K_ESCAPE):
-                    self.quit()
-                    return
-
-                elif (event.type == QUIT):
-                    self.quit()
-                    return
-
-            self.draw_text("Joystick Name:  %s" % self.joystick_names[0], 
-                           5, 5, (0, 255, 0))
-
-            self.draw_text("Axes (%d)" % self.my_joystick.get_numaxes(), 
-                           5, 25, (255, 255, 255))
-
-            for i in range(0, self.my_joystick.get_numaxes()):
-                if (self.my_joystick.get_axis(i)):
-                    pygame.draw.circle(self.screen, (0, 0, 200), 
-                                       (20 + (i * 30), 50), 10, 0)
-                else:
-                    pygame.draw.circle(self.screen, (255, 0, 0), 
-                                       (20 + (i * 30), 50), 10, 0)
-
-                self.center_text("%d" % i, 20 + (i * 30), 50, (255, 255, 255))
-
-            self.draw_text("Buttons (%d)" % self.my_joystick.get_numbuttons(), 
-                           5, 75, (255, 255, 255))
-
-            for i in range(0, self.my_joystick.get_numbuttons()):
-                if (self.my_joystick.get_button(i)):
-                    pygame.draw.circle(self.screen, (0, 0, 200), 
-                                       (20 + (i * 30), 100), 10, 0)
-                else:
-                    pygame.draw.circle(self.screen, (255, 0, 0), 
-                                       (20 + (i * 30), 100), 10, 0)
-
-                self.center_text("%d" % i, 20 + (i * 30), 100, (255, 255, 255))
-
-            self.draw_text("POV Hats (%d)" % self.my_joystick.get_numhats(), 
-                           5, 125, (255, 255, 255))
-
-            for i in range(0, self.my_joystick.get_numhats()):
-                if (self.my_joystick.get_hat(i) != (0, 0)):
-                    pygame.draw.circle(self.screen, (0, 0, 200), 
-                                       (20 + (i * 30), 150), 10, 0)
-                else:
-                    pygame.draw.circle(self.screen, (255, 0, 0), 
-                                       (20 + (i * 30), 150), 10, 0)
-
-                self.center_text("%d" % i, 20 + (i * 30), 100, (255, 255, 255))
-
-            pygame.display.flip()
-
-    def quit(self):
-        pygame.display.quit()
-
-app = App()
-app.main()
+    # Limit to 20 frames per second
+    clock.tick(20)
+    
+# Close the window and quit.
+# If you forget this line, the program will 'hang'
+# on exit if running from IDLE.
+pygame.quit ()
